@@ -9,7 +9,9 @@
  * - Hur lång tid träningen tog
  */
 
-import { Text } from "react-native";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { useCompletedWorkoutsStore } from "@/states/completed";
 
 /**
  * HistoryScreen - Visar historik över tidigare träningspass
@@ -19,5 +21,12 @@ import { Text } from "react-native";
  * och visa dem här!
  */
 export default function HistoryScreen() {
-  return <Text>History</Text>;
+  const workouts = useCompletedWorkoutsStore((store) => store.workouts);
+  return (
+    <ThemedView>
+      {workouts.map((workout) => (
+        <ThemedText>{workout.startedAt.toLocaleTimeString()}</ThemedText>
+      ))}
+    </ThemedView>
+  );
 }

@@ -6,7 +6,7 @@
  * inte hur mycket eller när vi tillagade det.
  */
 export interface Exercise {
-  name: string;           // Namnet på övningen, typ "Bänkpress"
+  name: string; // Namnet på övningen, typ "Bänkpress"
   muscleGroups: string[]; // Vilka muskler vi tränar, typ ["Bröst", "Axlar"]
 }
 
@@ -29,10 +29,22 @@ export const EXERCISES = [BENCH_PRESS, SQUATS];
  * och alla set vi körde.
  */
 export class CompletedExercise {
-  public exercise: Exercise;        // Vilken övning (t.ex. Bänkpress)
-  public startedAt: Date;            // När vi började övningen
-  public endedAt: Date;              // När vi blev klara
-  public sets: CompletedSet[];       // Alla set vi körde (viktigt!)
+  public exercise: Exercise; // Vilken övning (t.ex. Bänkpress)
+  public startedAt: Date; // När vi började övningen
+  public endedAt: Date; // När vi blev klara
+  public sets: CompletedSet[]; // Alla set vi körde (viktigt!)
+
+  constructor(
+    exercise: Exercise,
+    startedAt: Date,
+    endedAt: Date,
+    sets: CompletedSet[]
+  ) {
+    this.exercise = exercise;
+    this.startedAt = startedAt;
+    this.endedAt = endedAt;
+    this.sets = sets;
+  }
 }
 
 /**
@@ -43,10 +55,22 @@ export class CompletedExercise {
  * hur mycket vikt, och när vi började/slutade.
  */
 export class CompletedSet {
-  public startedAt: Date;     // När vi började settet
-  public endedAt: Date;       // När vi blev klara med settet
+  public startedAt: Date; // När vi började settet
+  public endedAt: Date; // När vi blev klara med settet
   public repetitions: number; // Hur många repetitioner (lyft) vi gjorde
-  public weight: number;      // Hur mycket vikt i kg
+  public weight: number; // Hur mycket vikt i kg
+
+  constructor(
+    startedAt: Date,
+    endedAt: Date,
+    repetitions: number,
+    weight: number
+  ) {
+    this.endedAt = endedAt;
+    this.startedAt = startedAt;
+    this.repetitions = repetitions;
+    this.weight = weight;
+  }
 }
 
 /**
@@ -57,8 +81,8 @@ export class CompletedSet {
  * vi har inte börjat träna än. Det är typ vår att-göra-lista för träningen.
  */
 export class PendingExercise {
-  public exercise: Exercise;    // Vilken övning vi ska göra
-  public sets: PendingSet[];    // Alla set vi planerat att göra
+  public exercise: Exercise; // Vilken övning vi ska göra
+  public sets: PendingSet[]; // Alla set vi planerat att göra
 
   constructor(exercise: Exercise, sets: PendingSet[]) {
     this.exercise = exercise;
@@ -74,7 +98,7 @@ export class PendingExercise {
  */
 export class PendingSet {
   public repetitions: number; // Hur många reps vi planerat att göra
-  public weight: number;      // Hur mycket vikt vi planerat att lyfta
+  public weight: number; // Hur mycket vikt vi planerat att lyfta
 
   constructor(repetitions: number, weight: number) {
     this.repetitions = repetitions;
@@ -90,9 +114,9 @@ export class PendingSet {
  * vi har kvar att göra. Det är här vi är "mitt i" träningen.
  */
 export class OngoingExercise {
-  public startedAt: Date;       // När vi började denna övning
-  public exercise: Exercise;    // Vilken övning vi kör
-  public sets: OngoingSet[];    // Alla set (både gjorda och kommande)
+  public startedAt: Date; // När vi började denna övning
+  public exercise: Exercise; // Vilken övning vi kör
+  public sets: OngoingSet[]; // Alla set (både gjorda och kommande)
 
   constructor(exercise: Exercise, startedAt: Date, sets: OngoingSet[]) {
     this.exercise = exercise;
@@ -115,6 +139,26 @@ export class OngoingExercise {
       value.sets.map((set) => new OngoingSet(set.repetitions, set.weight))
     );
   }
+
+  getActiveSet(): OngoingSet | null {
+    for (let set of this.sets) {
+      if (set.startedAt !== null && set.endedAt === null) {
+        return set;
+      }
+    }
+
+    return null;
+  }
+
+  getNextSet(): OngoingSet | null {
+    for (let set of this.sets) {
+      if (set.startedAt === null) {
+        return set;
+      }
+    }
+
+    return null;
+  }
 }
 
 /**
@@ -128,9 +172,9 @@ export class OngoingExercise {
  */
 export class OngoingSet {
   public startedAt: Date | null; // När vi började settet (null = inte börjat)
-  public endedAt: Date | null;   // När vi blev klara (null = inte klart än)
-  public repetitions: number;    // Hur många reps vi ska göra
-  public weight: number;         // Hur mycket vikt vi ska lyfta
+  public endedAt: Date | null; // När vi blev klara (null = inte klart än)
+  public repetitions: number; // Hur många reps vi ska göra
+  public weight: number; // Hur mycket vikt vi ska lyfta
 
   constructor(repetitions: number, weight: number) {
     // När vi skapar ett set är det inte påbörjat ännu, därför null
@@ -138,5 +182,9 @@ export class OngoingSet {
     this.endedAt = null;
     this.repetitions = repetitions;
     this.weight = weight;
+  }
+
+  public isCompleted() {
+    return this.endedAt != null;
   }
 }

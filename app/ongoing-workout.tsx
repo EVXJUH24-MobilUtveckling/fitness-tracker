@@ -12,9 +12,11 @@
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useCompletedWorkoutsStore } from "@/states/completed";
 import { useOngoingStore } from "@/states/ongoing";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Button, ScrollView, Text, View } from "react-native";
 
 /**
  * OngoingWorkoutScreen - Huvudskärmen för pågående träning
@@ -28,11 +30,12 @@ export default function OngoingWorkoutScreen() {
 
   // Hämtar pågående träningspass från OngoingStore
   const workout = useOngoingStore((store) => store.workout);
-
-  // Om något gått fel och det inte finns något träningspass, visa felmeddelande
-  if (workout === null) {
-    return <ThemedText>Something went wrong!</ThemedText>;
-  }
+  const clearOngoingWorkout = useOngoingStore((store) => store.clear);
+  const startNewSet = useOngoingStore((store) => store.startNewSet);
+  const endActiveSet = useOngoingStore((store) => store.endActiveSet);
+  const addCompletedWorkout = useCompletedWorkoutsStore(
+    (store) => store.addWorkout
+  );
 
   /**
    * useEffect - Kör kod när komponenten visas första gången
@@ -45,6 +48,10 @@ export default function OngoingWorkoutScreen() {
    * clearInterval = stoppar timern (viktigt att rensa upp!)
    */
   useEffect(() => {
+    if (workout === null) {
+      return;
+    }
+
     // Sätter upp en timer som körs varje sekund (1000 millisekunder)
     const interval = setInterval(() => {
       const now = new Date(); // Nuvarande tid
@@ -59,7 +66,22 @@ export default function OngoingWorkoutScreen() {
     return () => {
       clearInterval(interval);
     };
-  }, []); // Tom array = kör bara en gång när komponenten visas första gången
+  }, [workout]); // Tom array = kör bara en gång när komponenten visas första gången
+
+  // Om något gått fel och det inte finns något träningspass, visa felmeddelande
+  if (workout === null) {
+    return <ThemedText>Something went wrong!</ThemedText>;
+  }
+
+  let activeSet = workout.ongoingExercise?.getActiveSet();
+  const isFinished =
+    workout.pendingExercises.length === 0 && workout.ongoingExercise === null;
+
+  const finishWorkout = () => {
+    addCompletedWorkout(workout);
+    clearOngoingWorkout();
+    router.navigate("/");
+  };
 
   return (
     <ThemedView>
@@ -67,6 +89,43 @@ export default function OngoingWorkoutScreen() {
         {/* TIMER - visar hur länge vi tränat */}
         <View>
           <ThemedText type="title">{timer}</ThemedText>
+        </View>
+
+        {isFinished && (
+          <Button title="Avsluta workout" onPress={finishWorkout} />
+        )}
+
+        {/* Visa pågående övning */}
+        {workout.ongoingExercise && (
+          <View>
+            <ThemedText type="subtitle">Pågående övning</ThemedText>
+            <View>
+              <Text>{workout.ongoingExercise.exercise.name}</Text>
+              {activeSet !== null ? (
+                <View>
+                  <Button title="Avsluta set" onPress={endActiveSet} />
+                </View>
+              ) : (
+                <View>
+                  <Button title="Börja set" onPress={startNewSet} />
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        <ThemedText type="subtitle">På gång</ThemedText>
+        <View>
+          {workout.pendingExercises.map((exercise) => (
+            <ThemedText>{exercise.exercise.name}</ThemedText>
+          ))}
+        </View>
+
+        <ThemedText type="subtitle">Avklarade</ThemedText>
+        <View>
+          {workout.completedExercises.map((exercise) => (
+            <ThemedText>{exercise.exercise.name}</ThemedText>
+          ))}
         </View>
       </ScrollView>
     </ThemedView>
@@ -83,9 +142,9 @@ export default function OngoingWorkoutScreen() {
  * @returns En sträng i formatet "MM:SS" (t.ex. "05:23")
  */
 function formatTime(ms) {
-  const totalSeconds = Math.floor(ms / 1000);      // Omvandla ms till sekunder
-  const minutes = Math.floor(totalSeconds / 60);   // Räkna ut minuter
-  const seconds = totalSeconds % 60;                // Räkna ut resterande sekunder
+  const totalSeconds = Math.floor(ms / 1000); // Omvandla ms till sekunder
+  const minutes = Math.floor(totalSeconds / 60); // Räkna ut minuter
+  const seconds = totalSeconds % 60; // Räkna ut resterande sekunder
 
   // padStart(2, "0") lägger till en nolla framför om siffran är ensiffrig
   // Exempelvis: 5 blir "05", 12 förblir "12"

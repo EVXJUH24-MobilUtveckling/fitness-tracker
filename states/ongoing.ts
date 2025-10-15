@@ -1,3 +1,8 @@
+import {
+  CompletedExercise,
+  CompletedSet,
+  OngoingExercise,
+} from "@/models/exercise";
 import { OngoingWorkout } from "@/models/workout";
 import { create } from "zustand";
 
@@ -13,9 +18,12 @@ import { create } from "zustand";
  * vi startar ett träningspass.
  */
 export interface OngoingStore {
-  workout: OngoingWorkout | null;  // Träningspasset vi kör, eller null om vi inte tränar
+  workout: OngoingWorkout | null; // Träningspasset vi kör, eller null om vi inte tränar
 
-  startWorkout: (workout: OngoingWorkout) => void;  // Startar ett träningspass
+  clear: () => void;
+  startWorkout: (workout: OngoingWorkout) => void; // Startar ett träningspass
+  startNewSet: () => void;
+  endActiveSet: () => void;
 }
 
 /**
@@ -30,6 +38,10 @@ export const useOngoingStore = create<OngoingStore>((set) => ({
   // Startvärde: null (vi tränar inte när appen startar)
   workout: null,
 
+  clear: () => {
+    set({ workout: null });
+  },
+
   /**
    * startWorkout - Startar ett träningspass
    *
@@ -39,5 +51,56 @@ export const useOngoingStore = create<OngoingStore>((set) => ({
    */
   startWorkout: (workout: OngoingWorkout) => {
     set({ workout });
+  },
+
+  startNewSet: () => {
+    set((current) => {
+      let copy = { ...current.workout };
+      let nextSet = copy.ongoingExercise?.getNextSet();
+      if (nextSet) {
+        nextSet.startedAt = new Date();
+      }
+
+      return { workout: copy };
+    });
+  },
+
+  endActiveSet: () => {
+    set((current) => {
+      let copy = { ...current.workout };
+      let activeSet = copy.ongoingExercise?.getActiveSet();
+      if (activeSet) {
+        activeSet.endedAt = new Date();
+      }
+
+      if (copy.ongoingExercise?.getNextSet() === null) {
+        const completedExercise = new CompletedExercise(
+          copy.ongoingExercise.exercise,
+          copy.ongoingExercise.startedAt,
+          new Date(),
+          copy.ongoingExercise.sets.map(
+            (set) =>
+              new CompletedSet(
+                set.startedAt ?? new Date(),
+                set.endedAt ?? new Date(),
+                set.repetitions,
+                set.weight
+              )
+          )
+        );
+
+        copy.completedExercises?.push(completedExercise);
+        const pendingExercise = copy.pendingExercises?.splice(0, 1);
+        if (pendingExercise?.length === 1) {
+          copy.ongoingExercise = OngoingExercise.fromPending(
+            pendingExercise[0]
+          );
+        } else {
+          copy.ongoingExercise = null;
+        }
+      }
+
+      return { workout: copy };
+    });
   },
 }));

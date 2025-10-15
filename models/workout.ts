@@ -4,6 +4,14 @@ import {
   PendingExercise,
 } from "./exercise";
 
+class Workout {
+  public startDate: Date | null;
+  public endDate: Date | null;
+  public pendingExercises: PendingExercise[]; // Övningar vi inte börjat än
+  public ongoingExercise: OngoingExercise | null; // Övningen vi håller på med NU
+  public completedExercises: CompletedExercise[]; // Övningar vi gjort klart
+}
+
 /**
  * PendingWorkout - Ett träningspass vi planerar
  *
@@ -20,6 +28,8 @@ export class PendingWorkout {
   }
 }
 
+// Pending Workout -> Ongoing Workout
+
 /**
  * OngoingWorkout - Ett träningspass vi håller på med JUST NU
  *
@@ -32,10 +42,10 @@ export class PendingWorkout {
  * Det är typ som en kö där vi jobbar oss igenom en övning i taget.
  */
 export class OngoingWorkout {
-  public startedAt: Date;                           // När vi började träna
-  public pendingExercises: PendingExercise[];       // Övningar vi inte börjat än
-  public ongoingExercise: OngoingExercise;          // Övningen vi håller på med NU
-  public completedExercises: CompletedExercise[];   // Övningar vi gjort klart
+  public startedAt: Date; // När vi började träna
+  public pendingExercises: PendingExercise[]; // Övningar vi inte börjat än
+  public ongoingExercise: OngoingExercise | null; // Övningen vi håller på med NU
+  public completedExercises: CompletedExercise[]; // Övningar vi gjort klart
 
   constructor(pendingExercises: PendingExercise[]) {
     this.startedAt = new Date(); // Sparar när vi började
@@ -62,9 +72,9 @@ export class OngoingWorkout {
  * övningar vi körde. Det är det här som sedan kan visas i historiken.
  */
 export class CompletedWorkout {
-  public startedAt: Date;                 // När vi började träningspasset
-  public endedAt: Date;                   // När vi blev klara
-  public exercises: CompletedExercise[];  // Alla övningar vi körde
+  public startedAt: Date; // När vi började träningspasset
+  public endedAt: Date; // När vi blev klara
+  public exercises: CompletedExercise[]; // Alla övningar vi körde
 
   constructor(startedAt: Date, endedAt: Date, exercises: CompletedExercise[]) {
     this.startedAt = startedAt;
